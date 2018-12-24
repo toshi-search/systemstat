@@ -407,9 +407,9 @@ impl Platform for PlatformImpl {
         for e in entries {
             let p = e.unwrap().path();
             let s = p.to_str().unwrap();
-            // let f = p.file_name().unwrap().to_str().unwrap();
+            let f = p.file_name().unwrap().to_str().unwrap();
             if f.len() > 3 {
-                if value_from_file::<String>(&(s.to_string() + "/type")).map(|t| t == "Battery").unwrap_or(false) {
+                if f.split_at(3).0 == "BAT" {
                     full += try!(
                         value_from_file::<i32>(&(s.to_string() + "/energy_full"))
                             .or_else(|_| value_from_file::<i32>(&(s.to_string() + "/charge_full")))
@@ -443,17 +443,7 @@ impl Platform for PlatformImpl {
     }
 
     fn on_ac_power(&self) -> io::Result<bool> {
-        let dir = "/sys/class/power_supply";
-        let entries = try!(fs::read_dir(&dir));
-        let mut on_ac = false;
-        for e in entries {
-            let p = e.unwrap().path();
-            let s = p.to_str().unwrap();
-            if value_from_file::<String>(&(s.to_string() + "/type")).map(|t| t == "Mains").unwrap_or(false) {
-                on_ac |= try!(value_from_file::<i32>(&(s.to_string() + "/online")).map(|v| v == 1))
-            }
-        }
-        Ok(on_ac)
+        value_from_file::<i32>("/sys/class/power_supply/AC/online").map(|v| v == 1)
     }
 
     fn mounts(&self) -> io::Result<Vec<Filesystem>> {
